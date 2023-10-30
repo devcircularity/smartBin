@@ -70,7 +70,6 @@ while True:
         response = requests.get(users_api_url)
         if response.status_code == 200:
             try:
-                print(response.content)
                 users_data = response.json()
             except json.JSONDecodeError as e:
                 print("Error: Failed to parse JSON response from the remote 'users' API.")
@@ -157,13 +156,19 @@ while True:
 
     try:
         # Fetch bin_data from the local database
-        select_query = "SELECT no, bin_id, user_interaction, total_weight, fill_level, fill_level_B, time_stamp FROM bin_data WHERE sent_to_remote = 0"
+        select_query = "SELECT * FROM bin_data WHERE sent_to_remote = 0"  # Add a condition to fetch only unsent entries
         cursor.execute(select_query)
         result = cursor.fetchall()  # Fetch the result
 
         # Iterate over the fetched bin_data and send it to the remote API
         for bin_item in result:
-            no, bin_id, user_interaction, total_weight, fill_level, fill_level_B, time_stamp = bin_item
+            user_interaction = bin_item[1]
+            item = bin_item[2]
+            total_weight = bin_item[3]
+            fill_level = bin_item[4]
+            fill_level_B = bin_item[5]  # New fill_level_B column
+            time_stamp = bin_item[6]
+            bin_id = bin_item[0]  # Extract bin_id from the bin_item
 
             # Convert the time_stamp to a string if it's a datetime object
             if isinstance(time_stamp, datetime):
@@ -171,14 +176,14 @@ while True:
 
             # Prepare the payload for the bin data API request
             bin_payload = {
-                "bin_id": bin_id,
+                "bin_id": bin_id,  # Add bin_id field
                 "user_interaction": user_interaction,
+                "item": item,
                 "total_weight": total_weight,
                 "fill_level": fill_level,
                 "fill_level_B": fill_level_B,
                 "time_stamp": time_stamp
             }
-
 
             # Send the bin data to the remote API
             response = requests.post(bindata_api_url, data=json.dumps(bin_payload, cls=CustomJSONEncoder), headers={'Content-Type': 'application/json'})

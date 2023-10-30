@@ -70,6 +70,7 @@ while True:
         response = requests.get(users_api_url)
         if response.status_code == 200:
             try:
+                print(response.content)
                 users_data = response.json()
             except json.JSONDecodeError as e:
                 print("Error: Failed to parse JSON response from the remote 'users' API.")
